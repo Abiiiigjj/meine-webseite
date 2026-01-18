@@ -20,6 +20,21 @@ export default function LeadForm() {
       interest_level: 'high'
     });
 
+    // Fire-and-forget: E-Mail-Benachrichtigung an Admin
+    if (!error) {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          email: formData.get('email'),
+          company: formData.get('company'),
+        }),
+      }).catch(() => {
+        // Fehler ignorieren - Lead ist bereits gespeichert
+      });
+    }
+
     setLoading(false);
     if (!error) setSuccess(true);
   }
@@ -33,18 +48,18 @@ export default function LeadForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <input name="name" type="text" required placeholder="Ihr Name" 
+        <input name="name" type="text" required placeholder="Ihr Name"
           className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" />
       </div>
       <div>
-        <input name="email" type="email" required placeholder="Geschäftliche E-Mail" 
+        <input name="email" type="email" required placeholder="Geschäftliche E-Mail"
           className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" />
       </div>
       <div>
-        <input name="company" type="text" placeholder="Kanzlei / Unternehmen" 
+        <input name="company" type="text" placeholder="Kanzlei / Unternehmen"
           className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" />
       </div>
-      <button disabled={loading} type="submit" 
+      <button disabled={loading} type="submit"
         className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
         {loading ? <Loader2 className="animate-spin" /> : <>Anfrage senden <ArrowRight className="w-4 h-4" /></>}
       </button>

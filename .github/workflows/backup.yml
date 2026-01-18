@@ -1,0 +1,106 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Täglich um 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    # Manueller Trigger für Tests
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create Database Backup
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          # Extrahiere Datum für Dateinamen
+          BACKUP_DATE=$(date +%Y-%m-%d_%H-%M-%S)
+          BACKUP_FILE="backup_aismarthack_${BACKUP_DATE}.sql"
+          
+          echo "🔄 Starte Datenbank-Backup..."
+          
+          # pg_dump mit Connection String
+          pg_dump "${SUPABASE_DB_URL}" \
+            --no-owner \
+            --no-acl \
+            --clean \
+            --if-exists \
+            -f "${BACKUP_FILE}"
+          
+          echo "✅ Backup erstellt: ${BACKUP_FILE}"
+          
+          # Komprimieren
+          gzip "${BACKUP_FILE}"
+          BACKUP_FILE="${BACKUP_FILE}.gz"
+          
+          echo "📦 Backup komprimiert: ${BACKUP_FILE}"
+          ls -lh "${BACKUP_FILE}"
+          
+          # Für Upload-Step verfügbar machen
+          echo "BACKUP_FILE=${BACKUP_FILE}" >> $GITHUB_ENV
+
+      - name: Upload Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup-${{ github.run_number }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+          compression-level: 0  # Bereits komprimiert
+
+      - name: Cleanup Old Runs (Artifacts)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            
+            // Hole alle Workflow-Runs
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: 'backup.yml',
+              status: 'completed',
+              per_page: 100
+            });
+            
+            // Berechne 30-Tage-Grenze
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            // Lösche alte Runs (und damit ihre Artifacts)
+            for (const run of runs.data.workflow_runs) {
+              const runDate = new Date(run.created_at);
+              if (runDate < thirtyDaysAgo) {
+                console.log(`🗑️ Lösche alten Run vom ${run.created_at}`);
+                await github.rest.actions.deleteWorkflowRun({
+                  owner,
+                  repo,
+                  run_id: run.id
+                });
+              }
+            }
+            
+            console.log('✅ Cleanup abgeschlossen');
+
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: backup
+    if: failure()
+    steps:
+      - name: Notify on Failure
+        run: |
+          echo "⚠️ Backup fehlgeschlagen!"
+          echo "Bitte prüfe die Workflow-Logs."
+          # Hier könnte ein Webhook/Email-Notification eingebaut werden
+          exit 0
