@@ -5,12 +5,12 @@ export async function POST(req: Request) {
   try {
     const { name, email, company } = await req.json();
 
-    // Die Instanz wird erst ERZEUGT, wenn jemand das Formular abschickt.
-    // Das verhindert den Fehler beim "npm run build".
-    const resend = new Resend(process.env.RESEND_API_KEY || 'temporary_key_for_build');
+    // WICHTIG: Die Instanz darf NUR hier drin erstellt werden. 
+    // Nicht oben in der Datei!
+    const resend = new Resend(process.env.RESEND_API_KEY || 'build_placeholder');
 
-    if (!process.env.RESEND_API_KEY) {
-      return NextResponse.json({ error: 'Server configuration missing' }, { status: 500 });
+    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'build_placeholder') {
+      return NextResponse.json({ error: 'Mail config missing' }, { status: 500 });
     }
 
     await resend.emails.send({
