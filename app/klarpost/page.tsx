@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { FileText, Shield, Sparkles, AlertCircle } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { FileText, Shield, Sparkles, AlertCircle, Check, LogIn } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
 import LanguageSelector, { type Language } from '@/components/klarpost/LanguageSelector';
 import DocumentUploader from '@/components/klarpost/DocumentUploader';
 import StepIndicator, { type Step } from '@/components/klarpost/StepIndicator';
 import AnalysisResult, { type AnalysisData } from '@/components/klarpost/AnalysisResult';
+import LoginModal from '@/components/LoginModal';
 
 const translations = {
     de: {
@@ -16,6 +19,9 @@ const translations = {
         trustBadge3: 'Keine Anmeldung',
         errorTitle: 'Fehler bei der Analyse',
         tryAgain: 'Erneut versuchen',
+        savedToast: 'Analyse gespeichert!',
+        saveError: 'Speichern fehlgeschlagen',
+        loginToSave: 'Jetzt anmelden zum Speichern',
     },
     en: {
         title: 'Understand your letter in 3 seconds',
@@ -25,6 +31,9 @@ const translations = {
         trustBadge3: 'No registration',
         errorTitle: 'Analysis Error',
         tryAgain: 'Try again',
+        savedToast: 'Analysis saved!',
+        saveError: 'Save failed',
+        loginToSave: 'Sign in to save',
     },
     tr: {
         title: 'Mektubunuzu 3 saniyede anlayın',
@@ -34,6 +43,9 @@ const translations = {
         trustBadge3: 'Kayıt yok',
         errorTitle: 'Analiz Hatası',
         tryAgain: 'Tekrar dene',
+        savedToast: 'Analiz kaydedildi!',
+        saveError: 'Kaydetme başarısız',
+        loginToSave: 'Kaydetmek için giriş yap',
     },
     ru: {
         title: 'Понять письмо за 3 секунды',
@@ -43,6 +55,9 @@ const translations = {
         trustBadge3: 'Без регистрации',
         errorTitle: 'Ошибка анализа',
         tryAgain: 'Попробовать снова',
+        savedToast: 'Анализ сохранён!',
+        saveError: 'Ошибка сохранения',
+        loginToSave: 'Войти для сохранения',
     },
     ar: {
         title: 'فهم رسالتك في 3 ثوانٍ',
@@ -52,6 +67,9 @@ const translations = {
         trustBadge3: 'بدون تسجيل',
         errorTitle: 'خطأ في التحليل',
         tryAgain: 'حاول مرة أخرى',
+        savedToast: 'تم حفظ التحليل!',
+        saveError: 'فشل الحفظ',
+        loginToSave: 'سجّل الدخول للحفظ',
     },
     uk: {
         title: 'Зрозумійте лист за 3 секунди',
@@ -61,6 +79,9 @@ const translations = {
         trustBadge3: 'Без реєстрації',
         errorTitle: 'Помилка аналізу',
         tryAgain: 'Спробувати знову',
+        savedToast: 'Аналіз збережено!',
+        saveError: 'Помилка збереження',
+        loginToSave: 'Увійти для збереження',
     },
 };
 
@@ -86,14 +107,76 @@ export default function KlarpostPage() {
     const [analysisResult, setAnalysisResult] = useState<AnalysisData | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // Supabase Auth State
+    const [user, setUser] = useState<User | null>(null);
+    const [showLoginHint, setShowLoginHint] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+    // Toast State
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+    const supabase = createClient();
     const t = translations[language];
     const isRTL = language === 'ar';
 
+    // Check auth status on mount
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            setUser(currentUser);
+        };
+        checkUser();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                setShowLoginHint(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [supabase.auth]);
+
+    // Show toast helper
+    const displayToast = useCallback((message: string, type: 'success' | 'error') => {
+        setToastMessage(message);
+        setToastType(type);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+    }, []);
+
+    // Save analysis to database
+    const saveAnalysis = useCallback(async (data: AnalysisData, userId: string) => {
+        try {
+            const { error: insertError } = await supabase
+                .from('analyses')
+                .insert({
+                    user_id: userId,
+                    title: data.title,
+                    summary: data.warning || '',
+                    urgency: data.status,
+                    tasks: data.tasks,
+                    facts: data.facts,
+                });
+
+            if (insertError) {
+                throw insertError;
+            }
+
+            displayToast(t.savedToast, 'success');
+        } catch {
+            displayToast(t.saveError, 'error');
+        }
+    }, [supabase, displayToast, t.savedToast, t.saveError]);
+
     const handleFileSelect = useCallback(async (file: File) => {
-        console.log('File selected:', file.name, file.type);
         setCurrentStep('analyzing');
         setIsAnalyzing(true);
         setError(null);
+        setShowLoginHint(false);
 
         try {
             // Convert file to base64
@@ -119,20 +202,27 @@ export default function KlarpostPage() {
 
             setAnalysisResult(data);
             setCurrentStep('result');
+
+            // Save to database if user is logged in
+            if (user) {
+                await saveAnalysis(data, user.id);
+            } else {
+                setShowLoginHint(true);
+            }
         } catch (err) {
-            console.error('Analysis error:', err);
             setError(err instanceof Error ? err.message : 'Unbekannter Fehler');
             setCurrentStep('upload');
         } finally {
             setIsAnalyzing(false);
         }
-    }, []);
+    }, [user, saveAnalysis]);
 
     const handleReset = useCallback(() => {
         setCurrentStep('upload');
         setAnalysisResult(null);
         setIsAnalyzing(false);
         setError(null);
+        setShowLoginHint(false);
     }, []);
 
     return (
@@ -140,6 +230,31 @@ export default function KlarpostPage() {
             className="gradient-bg min-h-screen"
             dir={isRTL ? 'rtl' : 'ltr'}
         >
+            {/* Toast Notification */}
+            {showToast && (
+                <div
+                    className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl
+                                animate-fade-in-up backdrop-blur-md border
+                                ${toastType === 'success'
+                            ? 'bg-green-500/20 border-green-500/40 text-green-300'
+                            : 'bg-red-500/20 border-red-500/40 text-red-300'
+                        }`}
+                >
+                    {toastType === 'success' ? (
+                        <Check className="w-5 h-5" />
+                    ) : (
+                        <AlertCircle className="w-5 h-5" />
+                    )}
+                    <span className="font-medium">{toastMessage}</span>
+                </div>
+            )}
+
+            {/* Login Modal */}
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+            />
+
             {/* Decorative Orbs */}
             <div className="orb orb-1" />
             <div className="orb orb-2" />
@@ -228,11 +343,30 @@ export default function KlarpostPage() {
                     )}
 
                     {currentStep === 'result' && analysisResult && (
-                        <AnalysisResult
-                            data={analysisResult}
-                            language={language}
-                            onReset={handleReset}
-                        />
+                        <>
+                            <AnalysisResult
+                                data={analysisResult}
+                                language={language}
+                                onReset={handleReset}
+                            />
+
+                            {/* Login Hint for non-authenticated users */}
+                            {showLoginHint && (
+                                <div className="mt-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 animate-fade-in">
+                                    <button
+                                        onClick={() => setIsLoginModalOpen(true)}
+                                        className="w-full flex items-center justify-center gap-3 py-3 px-4
+                                                   bg-gradient-to-r from-purple-600 to-pink-600
+                                                   hover:from-purple-500 hover:to-pink-500
+                                                   text-white font-semibold rounded-xl
+                                                   transition-all duration-300 transform hover:scale-[1.02]"
+                                    >
+                                        <LogIn className="w-5 h-5" />
+                                        {t.loginToSave}
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </section>
 
