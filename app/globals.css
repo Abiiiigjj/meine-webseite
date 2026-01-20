@@ -7,143 +7,87 @@
   --color-neon-purple: #7000FF;
   
   /* Surface Colors */
-  --color-surface: rgba(255, 255, 255, 0.03);
-  --color-surface-border: rgba(255, 255, 255, 0.1);
+  --color-surface: #111111;
+  --color-surface-border: #333333;
   
   /* Fonts */
   --font-mono: 'Geist Mono', ui-monospace, monospace;
   --font-sans: 'Geist', system-ui, sans-serif;
 }
 
-/* --- PERFORMANCE UPDATE: Animationen gestoppt --- */
-
-/* Aurora Spin Animation */
-@keyframes aurora-spin {
-  from { /* transform: rotate(0deg); */ }
-  to { /* transform: rotate(360deg); */ }
-}
-
-.animate-aurora-spin {
-  /* animation: aurora-spin 20s linear infinite; */ /* DEAKTIVIERT */
-}
-
-.animate-aurora-spin-slow {
-  /* animation: aurora-spin 30s linear infinite; */ /* DEAKTIVIERT */
-}
-
-.animate-aurora-spin-slower {
-  /* animation: aurora-spin 40s linear infinite reverse; */ /* DEAKTIVIERT */
-}
-
 /* Base Styles */
 body {
-  background: var(--color-void);
+  background-color: var(--color-void);
   color: #ededed;
   font-family: var(--font-sans), Arial, sans-serif;
+  /* Performance: Text-Rendering optimieren */
+  text-rendering: optimizeSpeed;
 }
 
-/* --- PERFORMANCE UPDATE: Glassmorphism Blur entfernt --- */
+/* --------------------------------------------------
+   PERFORMANCE MODUS: STATISCH (KEINE ANIMATIONEN)
+   --------------------------------------------------
+*/
 
-/* Glassmorphism */
+/* Glassmorphism ERSATZ (Solid Color statt Blur) */
 .glass {
-  /* background: rgba(0, 0, 0, 0.4); */ /* ALT: Zu transparent ohne Blur */
-  background: rgba(10, 10, 10, 0.95);   /* NEU: Dunkel & Deckend (CPU-freundlich) */
-  
-  /* backdrop-filter: blur(20px); */         /* DEAKTIVIERT */
-  /* -webkit-backdrop-filter: blur(20px); */ /* DEAKTIVIERT */
-  
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #0a0a0a; /* Fast Schwarz, deckend */
+  border: 1px solid #333;    /* Einfacher grauer Rand */
 }
 
 .glass-light {
-  /* background: rgba(255, 255, 255, 0.05); */
-  background: rgba(20, 20, 20, 0.9);   /* NEU: Dunkler Hintergrund als Ersatz */
-  
-  /* backdrop-filter: blur(16px); */         /* DEAKTIVIERT */
-  /* -webkit-backdrop-filter: blur(16px); */ /* DEAKTIVIERT */
+  background-color: #1a1a1a; /* Etwas helleres Grau */
+  border: 1px solid #333;
 }
 
-/* --- PERFORMANCE UPDATE: Schatten entfernt --- */
-
-/* Neon Glow Effects */
+/* Neon Glow ERSATZ (Nur Farbe, kein Schatten-Berechnung) */
 .glow-cyan {
-  /* box-shadow: 0 0 20px var(--color-neon-cyan); */ /* DEAKTIVIERT */
+  border-color: var(--color-neon-cyan);
+  /* box-shadow entfernt */
 }
 
 .glow-purple {
-  /* box-shadow: 0 0 20px var(--color-neon-purple); */ /* DEAKTIVIERT */
+  border-color: var(--color-neon-purple);
+  /* box-shadow entfernt */
 }
 
 .text-glow-cyan {
-  /* text-shadow: 0 0 20px var(--color-neon-cyan); */ /* DEAKTIVIERT */
-  color: var(--color-neon-cyan); /* Fallback Farbe */
+  color: var(--color-neon-cyan);
+  /* text-shadow entfernt */
 }
 
 .text-glow-purple {
-  /* text-shadow: 0 0 20px var(--color-neon-purple); */ /* DEAKTIVIERT */
-  color: var(--color-neon-purple); /* Fallback Farbe */
+  color: var(--color-neon-purple);
+  /* text-shadow entfernt */
 }
 
-/* CTA Button Hover */
+/* Buttons (Keine Transitions, sofortige Reaktion) */
 .btn-neon {
-  background: rgba(255, 255, 255, 0.1); /* Etwas sichtbarer */
-  /* backdrop-filter: blur(12px); */    /* DEAKTIVIERT */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  background-color: #1a1a1a;
+  border: 1px solid #444;
+  color: #fff;
 }
 
 .btn-neon:hover {
+  /* Beim Drüberfahren wird der Rand Neon, aber keine weichen Übergänge */
   border-color: var(--color-neon-cyan);
-  /* box-shadow: 0 0 30px var(--color-neon-cyan); */ /* DEAKTIVIERT */
-  background: rgba(0, 240, 255, 0.1); /* Leichter Hintergrund-Schimmer statt Schatten */
+  background-color: #000;
+  color: var(--color-neon-cyan);
 }
 
-/* Pulse Animation for Neural Network */
-/* Diese Animation ist leicht, kann bleiben (Opacity ändern ist billig) */
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05); /* Skalierung reduziert für weniger Ruckeln */
-  }
-}
-
-.animate-pulse-glow {
- /* animation: pulse-glow 2s ease-in-out infinite; */
-}
-
-/* Terminal Cursor Blink */
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-.animate-blink {
- /* animation: blink 1s step-end infinite; */
-}
-
-/* Fade In Up (Nur einmalig beim Laden, daher OK für Performance) */
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Leere Klassen für Animationen (damit der HTML Code nicht crasht) */
+.animate-aurora-spin,
+.animate-aurora-spin-slow,
+.animate-aurora-spin-slower,
+.animate-pulse-glow,
+.animate-blink,
 .animate-fade-in-up {
- /* animation: fade-in-up 0.8s ease-out forwards; */
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
 }
 
-/* Staggered Animation Delays */
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
-.delay-500 { animation-delay: 500ms; }
+/* Delays deaktivieren */
+.delay-100, .delay-200, .delay-300, .delay-400, .delay-500 {
+  animation-delay: 0s !important;
+}
