@@ -15,26 +15,24 @@
   --font-sans: 'Geist', system-ui, sans-serif;
 }
 
+/* --- PERFORMANCE UPDATE: Animationen gestoppt --- */
+
 /* Aurora Spin Animation */
 @keyframes aurora-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/*.animate-aurora-spin*/ {
-  animation: aurora-spin 20s linear infinite;
+.animate-aurora-spin {
+  /* animation: aurora-spin 20s linear infinite; */ /* DEAKTIVIERT */
 }
 
 .animate-aurora-spin-slow {
-  animation: aurora-spin 30s linear infinite;
+  /* animation: aurora-spin 30s linear infinite; */ /* DEAKTIVIERT */
 }
 
 .animate-aurora-spin-slower {
-  animation: aurora-spin 40s linear infinite reverse;
+  /* animation: aurora-spin 40s linear infinite reverse; */ /* DEAKTIVIERT */
 }
 
 /* Base Styles */
@@ -44,51 +42,64 @@ body {
   font-family: var(--font-sans), Arial, sans-serif;
 }
 
+/* --- PERFORMANCE UPDATE: Glassmorphism Blur entfernt --- */
+
 /* Glassmorphism */
 .glass {
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* background: rgba(0, 0, 0, 0.4); */ /* ALT: Zu transparent ohne Blur */
+  background: rgba(10, 10, 10, 0.95);   /* NEU: Dunkel & Deckend (CPU-freundlich) */
+  
+  /* backdrop-filter: blur(20px); */         /* DEAKTIVIERT */
+  /* -webkit-backdrop-filter: blur(20px); */ /* DEAKTIVIERT */
+  
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-light {
-  background: rgba(255, 255, 255, 0.05);
- /* backdrop-filter: blur(16px); */
- /* -webkit-backdrop-filter: blur(16px); */
+  /* background: rgba(255, 255, 255, 0.05); */
+  background: rgba(20, 20, 20, 0.9);   /* NEU: Dunkler Hintergrund als Ersatz */
+  
+  /* backdrop-filter: blur(16px); */         /* DEAKTIVIERT */
+  /* -webkit-backdrop-filter: blur(16px); */ /* DEAKTIVIERT */
 }
+
+/* --- PERFORMANCE UPDATE: Schatten entfernt --- */
 
 /* Neon Glow Effects */
 .glow-cyan {
-  box-shadow: 0 0 20px var(--color-neon-cyan);
+  /* box-shadow: 0 0 20px var(--color-neon-cyan); */ /* DEAKTIVIERT */
 }
 
 .glow-purple {
-  box-shadow: 0 0 20px var(--color-neon-purple);
+  /* box-shadow: 0 0 20px var(--color-neon-purple); */ /* DEAKTIVIERT */
 }
 
 .text-glow-cyan {
-  text-shadow: 0 0 20px var(--color-neon-cyan);
+  /* text-shadow: 0 0 20px var(--color-neon-cyan); */ /* DEAKTIVIERT */
+  color: var(--color-neon-cyan); /* Fallback Farbe */
 }
 
 .text-glow-purple {
-  text-shadow: 0 0 20px var(--color-neon-purple);
+  /* text-shadow: 0 0 20px var(--color-neon-purple); */ /* DEAKTIVIERT */
+  color: var(--color-neon-purple); /* Fallback Farbe */
 }
 
 /* CTA Button Hover */
 .btn-neon {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.1); /* Etwas sichtbarer */
+  /* backdrop-filter: blur(12px); */    /* DEAKTIVIERT */
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
 }
 
 .btn-neon:hover {
   border-color: var(--color-neon-cyan);
-  box-shadow: 0 0 30px var(--color-neon-cyan);
+  /* box-shadow: 0 0 30px var(--color-neon-cyan); */ /* DEAKTIVIERT */
+  background: rgba(0, 240, 255, 0.1); /* Leichter Hintergrund-Schimmer statt Schatten */
 }
 
 /* Pulse Animation for Neural Network */
+/* Diese Animation ist leicht, kann bleiben (Opacity ändern ist billig) */
 @keyframes pulse-glow {
   0%, 100% {
     opacity: 0.4;
@@ -96,7 +107,7 @@ body {
   }
   50% {
     opacity: 1;
-    transform: scale(1.2);
+    transform: scale(1.05); /* Skalierung reduziert für weniger Ruckeln */
   }
 }
 
@@ -106,19 +117,15 @@ body {
 
 /* Terminal Cursor Blink */
 @keyframes blink {
-  0%, 50% {
-    opacity: 1;
-  }
-  51%, 100% {
-    opacity: 0;
-  }
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .animate-blink {
   animation: blink 1s step-end infinite;
 }
 
-/* Fade In Up */
+/* Fade In Up (Nur einmalig beim Laden, daher OK für Performance) */
 @keyframes fade-in-up {
   from {
     opacity: 0;
