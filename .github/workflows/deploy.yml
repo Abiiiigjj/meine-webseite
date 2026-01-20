@@ -35,7 +35,7 @@ jobs:
           docker run -d \
             --name nextjs-app \
             --restart unless-stopped \
-            -p 3000:3000 \
+            -p 127.0.0.1:3000:3000 \
             --env-file .env.local \
             aismarthack-app:latest
 
