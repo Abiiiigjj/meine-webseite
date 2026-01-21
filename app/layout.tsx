@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/CookieConsent";
+import { Toaster } from 'sonner';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,17 @@ export default function RootLayout({
       >
         {children}
         <CookieConsent />
+      </body>
+    </html>
+  );
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="de">
+      <body>
+        {children}
+        <Toaster position="bottom-right" theme="dark" />
       </body>
     </html>
   );
