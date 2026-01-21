@@ -1,24 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import CookieConsent from "@/components/CookieConsent";
-import { Toaster } from 'sonner';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "AI Smart Hack | Die Zukunft der KI",
-  description:
-    "Entfessle die Kraft der künstlichen Intelligenz. Unsere innovative Plattform revolutioniert die Art, wie du arbeitest, denkst und kreierst.",
-  keywords: ["AI", "KI", "Machine Learning", "Smart Hack", "Innovation"],
+  title: "AI Smart Hack",
+  description: "High-Assurance Lead-Gen für Confidential AI",
 };
 
 export default function RootLayout({
@@ -27,22 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className="dark" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0f]`}
-        suppressHydrationWarning
-      >
-        {children}
-        <CookieConsent />
-      </body>
-    </html>
-  );
-}
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
     <html lang="de">
-      <body>
+      <body className="antialiased bg-slate-950 text-white">
         {children}
         <Toaster position="bottom-right" theme="dark" />
       </body>
