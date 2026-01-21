@@ -1,5 +1,5 @@
 import Link from "next/link";
-import LeadForm from "@/components/LeadForm";
+import AdvancedLeadForm from "@/components/AdvancedLeadForm";
 import { ShieldCheck, Server, Lock, Terminal, Cpu, Network } from "lucide-react";
 
 export default function Home() {
@@ -155,7 +155,7 @@ export default function Home() {
           
           <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-sm shadow-xl">
             {/* HIER WIRD DAS FORMULAR GELADEN */}
-            <LeadForm />
+            <AdvancedLeadForm />
             
             <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
               <Lock className="w-3 h-3" />
