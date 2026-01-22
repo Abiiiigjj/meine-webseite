@@ -1,93 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
-  /* Cybernetic Color Palette */
-  --color-void: #050505;
-  --color-neon-cyan: #00F0FF;
-  --color-neon-purple: #7000FF;
-  
+  /* Sovereign Core Color Palette */
+  --color-void: #000000;
+  --color-terminal-green: #00FF41;
+  --color-cyber-blue: #00BFFF;
+
   /* Surface Colors */
-  --color-surface: #111111;
-  --color-surface-border: #333333;
-  
+  --color-surface: #050505;
+  --color-surface-border: #1a1a1a;
+
+  /* Text Colors */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #E0E0E0;
+  --color-text-muted: #888888;
+
   /* Fonts */
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
-  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
 }
 
 /* Base Styles */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background-color: var(--color-void);
-  color: #ededed;
+  background-color: #000000;
+  color: #E0E0E0;
   font-family: var(--font-sans), Arial, sans-serif;
-  /* Performance: Text-Rendering optimieren */
   text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* --------------------------------------------------
-   PERFORMANCE MODUS: STATISCH (KEINE ANIMATIONEN)
-   --------------------------------------------------
-*/
-
-/* Glassmorphism ERSATZ (Solid Color statt Blur) */
-.glass {
-  background-color: #0a0a0a; /* Fast Schwarz, deckend */
-  border: 1px solid #333;    /* Einfacher grauer Rand */
+/* Headings: Inter Bold */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
 }
 
-.glass-light {
-  background-color: #1a1a1a; /* Etwas helleres Grau */
-  border: 1px solid #333;
+/* Monospace Elements */
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono) !important;
 }
 
-/* Neon Glow ERSATZ (Nur Farbe, kein Schatten-Berechnung) */
-.glow-cyan {
-  border-color: var(--color-neon-cyan);
-  /* box-shadow entfernt */
-}
-
-.glow-purple {
-  border-color: var(--color-neon-purple);
-  /* box-shadow entfernt */
-}
-
-.text-glow-cyan {
-  color: var(--color-neon-cyan);
-  /* text-shadow entfernt */
-}
-
-.text-glow-purple {
-  color: var(--color-neon-purple);
-  /* text-shadow entfernt */
-}
-
-/* Buttons (Keine Transitions, sofortige Reaktion) */
-.btn-neon {
-  background-color: #1a1a1a;
-  border: 1px solid #444;
+/* Selection */
+::selection {
+  background-color: rgba(0, 255, 65, 0.3);
   color: #fff;
 }
 
-.btn-neon:hover {
-  /* Beim Drüberfahren wird der Rand Neon, aber keine weichen Übergänge */
-  border-color: var(--color-neon-cyan);
-  background-color: #000;
-  color: var(--color-neon-cyan);
+/* Terminal Green Glow Effect (subtle) */
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.15);
 }
 
-/* Leere Klassen für Animationen (damit der HTML Code nicht crasht) */
-.animate-aurora-spin,
-.animate-aurora-spin-slow,
-.animate-aurora-spin-slower,
-.animate-pulse-glow,
-.animate-blink,
-.animate-fade-in-up {
-  animation: none !important;
-  transform: none !important;
-  opacity: 1 !important;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-/* Delays deaktivieren */
-.delay-100, .delay-200, .delay-300, .delay-400, .delay-500 {
-  animation-delay: 0s !important;
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Focus States */
+input:focus,
+button:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: var(--color-terminal-green);
+}
+
+/* Form Input Styling */
+input,
+select,
+textarea {
+  font-family: var(--font-mono);
+}
+
+/* Animations */
+@keyframes pulse-green {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-green {
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

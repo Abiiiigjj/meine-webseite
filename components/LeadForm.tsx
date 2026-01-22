@@ -6,12 +6,12 @@ import { Loader2, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-// 1. Schema Definition (Strict Mode)
+// Schema Definition
 const leadSchema = z.object({
-  name: z.string().trim().min(2, "Name muss mindestens 2 Zeichen lang sein."),
-  email: z.string().trim().email("Bitte eine gültige E-Mail-Adresse eingeben."),
-  company: z.string().trim().min(2, "Bitte Firmennamen angeben."),
-  botcheck: z.string().optional(), // Honeypot
+  email: z.string().trim().email("Ungültige E-Mail-Adresse."),
+  company: z.string().trim().min(2, "Bitte Kanzlei/Unternehmen angeben."),
+  hasServer: z.enum(['ja', 'nein', 'unsicher']),
+  botcheck: z.string().optional(),
 });
 
 type LeadFormValues = z.infer<typeof leadSchema>;
@@ -24,23 +24,23 @@ export default function LeadForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setErrors({}); 
+    setErrors({});
 
     const formData = new FormData(e.currentTarget);
     const rawData = {
-      name: formData.get('name'),
       email: formData.get('email'),
       company: formData.get('company'),
+      hasServer: formData.get('hasServer') || 'unsicher',
       botcheck: formData.get('botcheck'),
     };
 
-    // 2. Client-Side Validierung
+    // Client-Side Validierung
     const validation = leadSchema.safeParse(rawData);
 
     if (!validation.success) {
-      const fieldErrors: any = {};
+      const fieldErrors: Record<string, string> = {};
       validation.error.issues.forEach((issue) => {
-        fieldErrors[issue.path[0]] = issue.message;
+        fieldErrors[issue.path[0] as string] = issue.message;
       });
       setErrors(fieldErrors);
       setLoading(false);
@@ -50,69 +50,69 @@ export default function LeadForm() {
 
     const { data: validData } = validation;
 
-    // 3. Bot-Check (Honeypot)
+    // Bot-Check (Honeypot)
     if (validData.botcheck) {
       setLoading(false);
-      setSuccess(true); 
+      setSuccess(true);
       return;
     }
 
     try {
       const supabase = createClient();
 
-      // 4. Metadaten sammeln (LSI Vorbereitung)
+      // Metadaten sammeln
       const metaDataPayload = {
+        hasExistingServer: validData.hasServer,
         userAgent: navigator.userAgent,
         timestamp: new Date().toISOString(),
-        source: 'web_form_v1',
+        source: 'sovereign_core_beta_v1',
         language: navigator.language
       };
 
-      // 5. Insert in Supabase (Mit Status & Metadata)
+      // Insert in Supabase
       const { error } = await supabase.from('leads').insert({
         email: validData.email,
-        name: validData.name,
         company: validData.company,
-        interest_level: 'high',
-        status: 'NEW',           // WICHTIG: Start-Status für KI
-        metadata: metaDataPayload // WICHTIG: Tech-Kontext
+        interest_level: 'beta_access',
+        status: 'NEW',
+        metadata: metaDataPayload
       });
 
       if (error) throw error;
 
-      // 6. Fire-and-forget Notification
+      // Fire-and-forget Notification
       fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validData),
+        body: JSON.stringify({
+          name: validData.company,
+          email: validData.email,
+          company: validData.company,
+        }),
       }).catch(console.error);
 
       setSuccess(true);
-      toast.success("Anfrage erfolgreich gesendet!");
+      toast.success("Access Request übermittelt.");
 
     } catch (err) {
       console.error('Submission Error:', err);
-      toast.error("Datenbank-Verbindungsfehler. Bitte später erneut versuchen.");
+      toast.error("Verbindungsfehler. Bitte später erneut versuchen.");
     } finally {
       setLoading(false);
     }
   }
 
   if (success) return (
-    <div className="p-8 bg-green-500/5 border border-green-500/20 rounded-xl text-center animate-in fade-in zoom-in duration-300">
+    <div className="p-8 bg-[#00FF41]/5 border border-[#00FF41]/20 rounded-xl text-center">
       <div className="flex justify-center mb-4">
-        <CheckCircle2 className="w-12 h-12 text-green-500" />
+        <div className="w-16 h-16 bg-[#00FF41]/10 rounded-full flex items-center justify-center border border-[#00FF41]/30">
+          <CheckCircle2 className="w-8 h-8 text-[#00FF41]" />
+        </div>
       </div>
-      <h3 className="text-xl font-semibold text-white mb-2">Vielen Dank!</h3>
-      <p className="text-slate-400">
-        Wir haben Ihre Anfrage erhalten. Ein Experte prüft die Machbarkeit Ihrer Anforderungen.
+      <h3 className="text-xl font-semibold text-white mb-2 font-mono">ACCESS REQUEST RECEIVED</h3>
+      <p className="text-gray-400 text-sm">
+        Wir prüfen Ihre Anfrage und melden uns innerhalb von 24-48h.
       </p>
-      <button 
-        onClick={() => setSuccess(false)}
-        className="mt-6 text-sm text-blue-400 hover:text-blue-300 underline"
-      >
-        Weitere Anfrage senden
-      </button>
     </div>
   );
 
@@ -121,33 +121,58 @@ export default function LeadForm() {
       {/* Honeypot Field */}
       <input type="text" name="botcheck" className="hidden" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
 
+      {/* E-Mail */}
       <div className="space-y-1">
-        <input 
-          name="name" type="text" placeholder="Ihr Name" disabled={loading}
-          className={`w-full bg-slate-950 border rounded-lg px-4 py-3 text-white outline-none transition-all ${errors.name ? 'border-red-500/50 focus:border-red-500' : 'border-slate-800 focus:border-blue-500'}`} 
+        <label className="text-xs text-gray-500 font-mono ml-1">E-MAIL ADRESSE *</label>
+        <input
+          name="email"
+          type="email"
+          placeholder="kanzlei@beispiel.de"
+          disabled={loading}
+          className={`w-full bg-black border rounded-lg px-4 py-3 text-white font-mono outline-none transition-all placeholder:text-gray-600 ${errors.email ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-[#00FF41]'}`}
         />
-        {errors.name && <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.name}</p>}
+        {errors.email && <p className="text-xs text-red-400 flex items-center gap-1 font-mono"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
       </div>
 
+      {/* Kanzlei / Unternehmen */}
       <div className="space-y-1">
-        <input 
-          name="email" type="email" placeholder="Geschäftliche E-Mail" disabled={loading}
-          className={`w-full bg-slate-950 border rounded-lg px-4 py-3 text-white outline-none transition-all ${errors.email ? 'border-red-500/50 focus:border-red-500' : 'border-slate-800 focus:border-blue-500'}`} 
+        <label className="text-xs text-gray-500 font-mono ml-1">KANZLEI / UNTERNEHMEN *</label>
+        <input
+          name="company"
+          type="text"
+          placeholder="Musterkanzlei GmbH"
+          disabled={loading}
+          className={`w-full bg-black border rounded-lg px-4 py-3 text-white font-mono outline-none transition-all placeholder:text-gray-600 ${errors.company ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-[#00FF41]'}`}
         />
-        {errors.email && <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.email}</p>}
+        {errors.company && <p className="text-xs text-red-400 flex items-center gap-1 font-mono"><AlertCircle className="w-3 h-3" /> {errors.company}</p>}
       </div>
 
+      {/* Server Dropdown */}
       <div className="space-y-1">
-        <input 
-          name="company" type="text" placeholder="Kanzlei / Unternehmen" disabled={loading}
-          className={`w-full bg-slate-950 border rounded-lg px-4 py-3 text-white outline-none transition-all ${errors.company ? 'border-red-500/50 focus:border-red-500' : 'border-slate-800 focus:border-blue-500'}`} 
-        />
-        {errors.company && <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.company}</p>}
+        <label className="text-xs text-gray-500 font-mono ml-1">HABEN SIE BESTEHENDE SERVER?</label>
+        <select
+          name="hasServer"
+          disabled={loading}
+          className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-white font-mono outline-none transition-all focus:border-[#00FF41] appearance-none cursor-pointer"
+          defaultValue="unsicher"
+        >
+          <option value="ja">Ja, wir haben eigene Server</option>
+          <option value="nein">Nein, keine eigene IT-Infrastruktur</option>
+          <option value="unsicher">Unsicher / Beratung gewünscht</option>
+        </select>
       </div>
 
-      <button disabled={loading} type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
-        {loading ? <Loader2 className="animate-spin" /> : <>Anfrage senden <ArrowRight className="w-4 h-4" /></>}
+      {/* Submit Button */}
+      <button
+        disabled={loading}
+        type="submit"
+        className="w-full bg-[#00FF41] hover:bg-[#00FF41]/90 disabled:opacity-50 text-black font-bold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 font-mono text-sm tracking-wide"
+      >
+        {loading ? (
+          <Loader2 className="animate-spin w-5 h-5" />
+        ) : (
+          <>[ REQUEST ACCESS CODE ] <ArrowRight className="w-4 h-4" /></>
+        )}
       </button>
     </form>
   );
